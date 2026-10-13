@@ -17,11 +17,15 @@ public sealed class BrightnessAdvisor
         var baseStep = BaseStep(conditions);
 
         return configuration.Circuits
-            .Select(circuit => new BrightnessRecommendation(circuit, AdjustForCircuitType(baseStep, circuit.Type)))
+            .Select(circuit =>
+            {
+                var step = AdjustForCircuitType(baseStep, circuit.Type);
+                return new BrightnessRecommendation(circuit, ToRegulatorScale(step, circuit.RegulatorSteps));
+            })
             .ToList();
     }
 
-    /// <summary>Step on the 5-step scale: lower visibility needs brighter lights.</summary>
+    /// <summary>Step on the 5-step reference scale: lower visibility needs brighter lights.</summary>
     internal static int BaseStep(VisibilityConditions conditions)
     {
         var nightStep = conditions.VisibilityMeters switch
@@ -40,4 +44,8 @@ public sealed class BrightnessAdvisor
     /// <summary>Taxiway lights run one step below runway lights.</summary>
     internal static int AdjustForCircuitType(int step, CircuitType type) =>
         type == CircuitType.Taxiway ? Math.Max(step - 1, 1) : step;
+
+    /// <summary>Scales a step of the 5-step reference scale onto the regulator's own range.</summary>
+    internal static int ToRegulatorScale(int step, int regulatorSteps) =>
+        regulatorSteps == MaxStep ? step : step * regulatorSteps / MaxStep + 1;
 }

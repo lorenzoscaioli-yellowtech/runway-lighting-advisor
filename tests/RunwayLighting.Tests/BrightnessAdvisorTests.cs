@@ -6,8 +6,8 @@ public class BrightnessAdvisorTests
 {
     private readonly BrightnessAdvisor _advisor = new();
 
-    private static RunwayConfiguration SingleCircuit(CircuitType type) =>
-        new("Test runway", [new Circuit("C1", "Circuit 1", type)]);
+    private static RunwayConfiguration SingleCircuit(CircuitType type, int regulatorSteps) =>
+        new("Test runway", [new Circuit("C1", "Circuit 1", type, regulatorSteps)]);
 
     [Theory]
     [InlineData(10000, 1)]
@@ -19,7 +19,7 @@ public class BrightnessAdvisorTests
     public void Night_step_increases_as_visibility_drops(int visibility, int expectedStep)
     {
         var result = _advisor.Recommend(
-            SingleCircuit(CircuitType.RunwayEdge), new VisibilityConditions(visibility, IsNight: true));
+            SingleCircuit(CircuitType.RunwayEdge, 5), new VisibilityConditions(visibility, IsNight: true));
 
         Assert.Equal(expectedStep, result.Single().Step);
     }
@@ -28,7 +28,7 @@ public class BrightnessAdvisorTests
     public void Daylight_adds_one_step()
     {
         var result = _advisor.Recommend(
-            SingleCircuit(CircuitType.RunwayEdge), new VisibilityConditions(3000, IsNight: false));
+            SingleCircuit(CircuitType.RunwayEdge, 5), new VisibilityConditions(3000, IsNight: false));
 
         Assert.Equal(3, result.Single().Step);
     }
@@ -37,7 +37,7 @@ public class BrightnessAdvisorTests
     public void Daylight_never_exceeds_the_top_step()
     {
         var result = _advisor.Recommend(
-            SingleCircuit(CircuitType.RunwayEdge), new VisibilityConditions(100, IsNight: false));
+            SingleCircuit(CircuitType.RunwayEdge, 5), new VisibilityConditions(100, IsNight: false));
 
         Assert.Equal(5, result.Single().Step);
     }
@@ -46,9 +46,20 @@ public class BrightnessAdvisorTests
     public void Taxiway_runs_one_step_below_the_runway()
     {
         var result = _advisor.Recommend(
-            SingleCircuit(CircuitType.Taxiway), new VisibilityConditions(1000, IsNight: true));
+            SingleCircuit(CircuitType.Taxiway, 5), new VisibilityConditions(1000, IsNight: true));
 
         Assert.Equal(2, result.Single().Step);
+    }
+
+    [Theory]
+    [InlineData(8000, 1)]
+    [InlineData(1000, 2)]
+    public void Three_step_regulator_gets_a_step_in_its_own_range(int visibility, int expectedStep)
+    {
+        var result = _advisor.Recommend(
+            SingleCircuit(CircuitType.RunwayEdge, 3), new VisibilityConditions(visibility, IsNight: true));
+
+        Assert.Equal(expectedStep, result.Single().Step);
     }
 
     [Fact]
@@ -63,9 +74,18 @@ public class BrightnessAdvisorTests
     public void Label_uses_the_B_prefix()
     {
         var result = _advisor.Recommend(
-            SingleCircuit(CircuitType.Approach), new VisibilityConditions(200, IsNight: true));
+            SingleCircuit(CircuitType.Approach, 5), new VisibilityConditions(200, IsNight: true));
 
         Assert.Equal("B5", result.Single().Label);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(4)]
+    public void Regulator_with_unsupported_step_count_is_rejected(int regulatorSteps)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new Circuit("C1", "Circuit 1", CircuitType.RunwayEdge, regulatorSteps));
     }
 
     [Fact]

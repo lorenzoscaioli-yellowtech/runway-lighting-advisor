@@ -43,6 +43,7 @@
             <tr>
                 <th>Circuito</th>
                 <th>Tipo</th>
+                <th>Gradini del regolatore</th>
                 <th>Gradino consigliato</th>
             </tr>
         </thead>
@@ -52,6 +53,7 @@
                 <tr>
                     <td>@recommendation.Circuit.Name <span class="id">@recommendation.Circuit.Id</span></td>
                     <td>@recommendation.Circuit.Type</td>
+                    <td>@recommendation.Circuit.RegulatorSteps</td>
                     <td class="step">@recommendation.Label</td>
                 </tr>
             }
