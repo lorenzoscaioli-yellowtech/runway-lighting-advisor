@@ -1,0 +1,84 @@
+@page "/"
+@rendermode InteractiveServer
+@inject BrightnessAdvisor Advisor
+
+<PageTitle>Luminosità pista</PageTitle>
+
+<h1>Luminosità consigliata per circuito</h1>
+<p class="hint">Strumento dimostrativo: configurazioni e soglie sono inventate.</p>
+
+<section class="form">
+    <label>
+        Configurazione
+        <select @bind="_configurationIndex">
+            @for (var i = 0; i < SampleConfigurations.All.Count; i++)
+            {
+                <option value="@i">@SampleConfigurations.All[i].Name</option>
+            }
+        </select>
+    </label>
+
+    <label>
+        Visibilità (metri)
+        <input type="number" min="0" step="100" @bind="_visibilityMeters" />
+    </label>
+
+    <label class="inline">
+        <input type="checkbox" @bind="_isNight" />
+        Notte
+    </label>
+
+    <button @onclick="Calculate">Calcola</button>
+</section>
+
+@if (_error is not null)
+{
+    <p class="error">@_error</p>
+}
+
+@if (_recommendations is not null)
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Circuito</th>
+                <th>Tipo</th>
+                <th>Gradino consigliato</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var recommendation in _recommendations)
+            {
+                <tr>
+                    <td>@recommendation.Circuit.Name <span class="id">@recommendation.Circuit.Id</span></td>
+                    <td>@recommendation.Circuit.Type</td>
+                    <td class="step">@recommendation.Label</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private int _configurationIndex;
+    private int _visibilityMeters = 2000;
+    private bool _isNight = true;
+    private IReadOnlyList<BrightnessRecommendation>? _recommendations;
+    private string? _error;
+
+    private void Calculate()
+    {
+        try
+        {
+            var conditions = new VisibilityConditions(_visibilityMeters, _isNight);
+            _recommendations = Advisor.Recommend(SampleConfigurations.All[_configurationIndex], conditions);
+            _error = null;
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            // Invalid user input (e.g. negative visibility): show it instead of breaking the Blazor session.
+            _recommendations = null;
+            _error = ex.Message;
+        }
+    }
+}
