@@ -47,5 +47,7 @@ public sealed class BrightnessAdvisor
 
     /// <summary>Scales a step of the 5-step reference scale onto the regulator's own range.</summary>
     internal static int ToRegulatorScale(int step, int regulatorSteps) =>
-        regulatorSteps == MaxStep ? step : step * regulatorSteps / MaxStep + 1;
+        regulatorSteps == MaxStep
+            ? step
+            : (step * regulatorSteps + MaxStep - 1) / MaxStep;
 }
