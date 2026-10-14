@@ -13,6 +13,12 @@ tests/RunwayLighting.Tests/ test xUnit
 docs/requisiti.md           requisiti funzionali
 ```
 
+Accessibile in
+
+```
+http://localhost:5113
+```
+
 ## Requisiti
 
 .NET SDK 10. La solution si apre in Visual Studio 2022 (17.12+) o Visual Studio 2026,
